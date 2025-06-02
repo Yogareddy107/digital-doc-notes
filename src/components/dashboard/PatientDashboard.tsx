@@ -26,14 +26,26 @@ export default function PatientDashboard() {
           *,
           doctor:doctors(
             *,
-            profiles:profiles(*)
+            profiles(*)
           )
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPrescriptions(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = data?.map(prescription => ({
+        ...prescription,
+        medications: prescription.medications as Medication[],
+        doctor: prescription.doctor ? {
+          ...prescription.doctor,
+          profiles: prescription.doctor.profiles
+        } : undefined
+      })) || [];
+      
+      setPrescriptions(transformedData);
     } catch (error: any) {
+      console.error('Error fetching prescriptions:', error);
       toast({
         title: "Error",
         description: "Failed to fetch prescriptions",

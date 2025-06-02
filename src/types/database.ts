@@ -46,6 +46,6 @@ export interface Prescription {
   status: 'active' | 'cancelled' | 'completed';
   created_at: string;
   updated_at: string;
-  doctor?: Doctor & Profile;
-  patient?: Patient & Profile;
+  doctor?: Doctor & { profiles: Profile };
+  patient?: Patient & { profiles: Profile };
 }

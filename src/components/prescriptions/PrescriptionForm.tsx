@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ interface PrescriptionFormProps {
 }
 
 export default function PrescriptionForm({ prescription, onSave, onCancel }: PrescriptionFormProps) {
+  const { user } = useAuth();
   const [patients, setPatients] = useState<(Patient & { profiles: Profile })[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,12 +50,20 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         .from('patients')
         .select(`
           *,
-          profiles:profiles(*)
+          profiles(*)
         `);
 
       if (error) throw error;
-      setPatients(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData = data?.map(patient => ({
+        ...patient,
+        profiles: patient.profiles as Profile
+      })) || [];
+      
+      setPatients(transformedData);
     } catch (error: any) {
+      console.error('Error fetching patients:', error);
       toast({
         title: "Error",
         description: "Failed to fetch patients",
@@ -87,6 +97,16 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to create prescriptions",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -95,9 +115,10 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
       }
 
       const prescriptionData = {
+        doctor_id: user.id,
         patient_id: formData.patient_id,
         diagnosis: formData.diagnosis,
-        medications: formData.medications,
+        medications: formData.medications as any, // Cast to satisfy Supabase Json type
         notes: formData.notes || null
       };
 
@@ -128,6 +149,7 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
 
       onSave();
     } catch (error: any) {
+      console.error('Error saving prescription:', error);
       toast({
         title: "Error",
         description: error.message,
@@ -139,8 +161,8 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
   };
 
   const filteredPatients = patients.filter(patient =>
-    patient.profiles.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    patient.profiles.email.toLowerCase().includes(searchTerm.toLowerCase())
+    patient.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    patient.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -172,8 +194,8 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
                 {filteredPatients.map((patient) => (
                   <SelectItem key={patient.id} value={patient.id}>
                     <div>
-                      <div className="font-medium">{patient.profiles.full_name}</div>
-                      <div className="text-sm text-gray-500">{patient.profiles.email}</div>
+                      <div className="font-medium">{patient.profiles?.full_name}</div>
+                      <div className="text-sm text-gray-500">{patient.profiles?.email}</div>
                     </div>
                   </SelectItem>
                 ))}
