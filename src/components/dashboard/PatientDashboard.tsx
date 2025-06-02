@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Prescription } from '@/types/database';
+import { Prescription, Medication } from '@/types/database';
 import { FileText, Download, Calendar, LogOut, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { generatePrescriptionPDF } from '@/utils/pdfGenerator';
@@ -24,9 +24,9 @@ export default function PatientDashboard() {
         .from('prescriptions')
         .select(`
           *,
-          doctor:doctors(
+          doctors!inner(
             *,
-            profiles(*)
+            profiles!inner(*)
           )
         `)
         .order('created_at', { ascending: false });
@@ -34,12 +34,13 @@ export default function PatientDashboard() {
       if (error) throw error;
       
       // Transform the data to match our interface
-      const transformedData = data?.map(prescription => ({
+      const transformedData: Prescription[] = data?.map(prescription => ({
         ...prescription,
         medications: prescription.medications as Medication[],
-        doctor: prescription.doctor ? {
-          ...prescription.doctor,
-          profiles: prescription.doctor.profiles
+        status: prescription.status as 'active' | 'cancelled' | 'completed',
+        doctor: prescription.doctors ? {
+          ...prescription.doctors,
+          profiles: prescription.doctors.profiles
         } : undefined
       })) || [];
       

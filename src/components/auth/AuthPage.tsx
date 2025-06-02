@@ -67,7 +67,7 @@ export default function AuthPage() {
     
     if (error) {
       toast({
-        title: "Registration Failed",
+        title: "Registration Failed", 
         description: error.message,
         variant: "destructive"
       });

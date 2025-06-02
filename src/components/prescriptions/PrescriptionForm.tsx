@@ -18,9 +18,13 @@ interface PrescriptionFormProps {
   onCancel: () => void;
 }
 
+interface PatientWithProfile extends Patient {
+  profiles: Profile;
+}
+
 export default function PrescriptionForm({ prescription, onSave, onCancel }: PrescriptionFormProps) {
   const { user } = useAuth();
-  const [patients, setPatients] = useState<(Patient & { profiles: Profile })[]>([]);
+  const [patients, setPatients] = useState<PatientWithProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -50,13 +54,13 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         .from('patients')
         .select(`
           *,
-          profiles(*)
+          profiles!inner(*)
         `);
 
       if (error) throw error;
       
       // Transform the data to match our interface
-      const transformedData = data?.map(patient => ({
+      const transformedData: PatientWithProfile[] = data?.map(patient => ({
         ...patient,
         profiles: patient.profiles as Profile
       })) || [];
@@ -118,7 +122,7 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         doctor_id: user.id,
         patient_id: formData.patient_id,
         diagnosis: formData.diagnosis,
-        medications: formData.medications as any, // Cast to satisfy Supabase Json type
+        medications: formData.medications,
         notes: formData.notes || null
       };
 
