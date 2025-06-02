@@ -9,7 +9,144 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      doctors: {
+        Row: {
+          created_at: string | null
+          id: string
+          license_number: string | null
+          specialization: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          license_number?: string | null
+          specialization: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          license_number?: string | null
+          specialization?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      patients: {
+        Row: {
+          created_at: string | null
+          date_of_birth: string | null
+          emergency_contact: string | null
+          id: string
+          medical_record_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          id: string
+          medical_record_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_of_birth?: string | null
+          emergency_contact?: string | null
+          id?: string
+          medical_record_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      prescriptions: {
+        Row: {
+          created_at: string | null
+          date_issued: string | null
+          diagnosis: string
+          doctor_id: string
+          id: string
+          medications: Json
+          notes: string | null
+          patient_id: string
+          pdf_url: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_issued?: string | null
+          diagnosis: string
+          doctor_id: string
+          id?: string
+          medications: Json
+          notes?: string | null
+          patient_id: string
+          pdf_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_issued?: string | null
+          diagnosis?: string
+          doctor_id?: string
+          id?: string
+          medications?: Json
+          notes?: string | null
+          patient_id?: string
+          pdf_url?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          full_name: string
+          id: string
+          phone?: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +155,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "doctor" | "patient"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +270,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["doctor", "patient"],
+    },
   },
 } as const
