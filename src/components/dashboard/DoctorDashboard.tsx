@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,9 +27,9 @@ export default function DoctorDashboard() {
         .from('prescriptions')
         .select(`
           *,
-          patients (
+          patients!prescriptions_patient_id_fkey (
             *,
-            profiles (*)
+            profiles!patients_id_fkey (*)
           )
         `)
         .order('created_at', { ascending: false });
@@ -38,7 +39,7 @@ export default function DoctorDashboard() {
       // Transform the data to match our interface
       const transformedData: Prescription[] = data?.map(prescription => ({
         ...prescription,
-        medications: prescription.medications as Medication[],
+        medications: prescription.medications as unknown as Medication[],
         status: prescription.status as 'active' | 'cancelled' | 'completed',
         patient: prescription.patients ? {
           ...prescription.patients,
