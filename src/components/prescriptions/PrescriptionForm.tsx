@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,13 +53,15 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         .from('patients')
         .select(`
           *,
-          profiles!inner(*)
+          profiles (*)
         `);
 
       if (error) throw error;
       
-      // Transform the data to match our interface
-      const transformedData: PatientWithProfile[] = data?.map(patient => ({
+      // Transform the data to match our interface, filtering out any with missing profiles
+      const transformedData: PatientWithProfile[] = data?.filter(patient => 
+        patient.profiles && typeof patient.profiles === 'object' && !('error' in patient.profiles)
+      ).map(patient => ({
         ...patient,
         profiles: patient.profiles as Profile
       })) || [];
@@ -122,7 +123,7 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         doctor_id: user.id,
         patient_id: formData.patient_id,
         diagnosis: formData.diagnosis,
-        medications: formData.medications,
+        medications: formData.medications as any, // Cast to Json type for Supabase
         notes: formData.notes || null
       };
 
