@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -54,7 +53,7 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         .from('patients')
         .select(`
           *,
-          profiles!patients_id_fkey (*)
+          profiles (*)
         `);
 
       if (error) throw error;
