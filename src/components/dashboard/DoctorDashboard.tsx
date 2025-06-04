@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,9 +27,9 @@ export default function DoctorDashboard() {
         .from('prescriptions')
         .select(`
           *,
-          patients (
+          patients!inner (
             *,
-            profiles (*)
+            profiles!inner (*)
           )
         `)
         .order('created_at', { ascending: false });
