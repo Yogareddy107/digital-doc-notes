@@ -15,9 +15,14 @@ const Index = () => {
               <Stethoscope className="h-8 w-8 text-blue-600 mr-3" />
               <span className="text-2xl font-bold text-gray-900">MedicNote</span>
             </div>
-            <Link to="/auth">
-              <Button>Get Started</Button>
-            </Link>
+            <div className="flex gap-4">
+              <Link to="/doctor">
+                <Button variant="outline">Doctor Portal</Button>
+              </Link>
+              <Link to="/patient">
+                <Button>Patient Portal</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -37,13 +42,13 @@ const Index = () => {
             and patients to access their medication information safely.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/auth">
+            <Link to="/doctor">
               <Button size="lg" className="text-lg px-8 py-4">
                 <Stethoscope className="w-5 h-5 mr-2" />
                 For Doctors
               </Button>
             </Link>
-            <Link to="/auth">
+            <Link to="/patient">
               <Button size="lg" variant="outline" className="text-lg px-8 py-4">
                 <Users className="w-5 h-5 mr-2" />
                 For Patients
@@ -150,11 +155,18 @@ const Index = () => {
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
             Join healthcare professionals who trust MedicNote for secure, efficient digital prescription management.
           </p>
-          <Link to="/auth">
-            <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
-              Get Started Today
-            </Button>
-          </Link>
+          <div className="flex gap-4 justify-center">
+            <Link to="/doctor">
+              <Button size="lg" variant="secondary" className="text-lg px-8 py-4">
+                Doctor Portal
+              </Button>
+            </Link>
+            <Link to="/patient">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-4 text-white border-white hover:bg-white hover:text-blue-600">
+                Patient Portal
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 

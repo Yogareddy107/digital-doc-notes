@@ -1,16 +1,15 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Prescription, Medication } from '@/types/database';
-import { FileText, Download, Calendar, LogOut, User } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { FileText, Calendar, Download, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { generatePrescriptionPDF } from '@/utils/pdfGenerator';
+import { toast } from '@/hooks/use-toast';
 
 export default function PatientDashboard() {
-  const { profile, signOut } = useAuth();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,10 +60,11 @@ export default function PatientDashboard() {
     try {
       await generatePrescriptionPDF(prescription);
       toast({
-        title: "Success",
-        description: "Prescription PDF downloaded successfully"
+        title: "PDF Downloaded",
+        description: "Prescription PDF has been downloaded successfully",
       });
     } catch (error) {
+      console.error('Error generating PDF:', error);
       toast({
         title: "Error",
         description: "Failed to generate PDF",
@@ -76,8 +76,8 @@ export default function PatientDashboard() {
   const stats = {
     total: prescriptions.length,
     active: prescriptions.filter(p => p.status === 'active').length,
-    recent: prescriptions.filter(p => 
-      new Date(p.created_at) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    thisMonth: prescriptions.filter(p => 
+      new Date(p.created_at).getMonth() === new Date().getMonth()
     ).length
   };
 
@@ -99,12 +99,14 @@ export default function PatientDashboard() {
           <div className="flex justify-between items-center py-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Patient Dashboard</h1>
-              <p className="text-gray-600">Welcome, {profile?.full_name}</p>
+              <p className="text-gray-600">Welcome to the Patient Portal</p>
             </div>
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <Link to="/">
+              <Button variant="outline">
+                <Home className="w-4 h-4 mr-2" />
+                Home
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -125,7 +127,7 @@ export default function PatientDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Prescriptions</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.active}</div>
@@ -134,11 +136,11 @@ export default function PatientDashboard() {
           
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Recent (30 days)</CardTitle>
+              <CardTitle className="text-sm font-medium">This Month</CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.recent}</div>
+              <div className="text-2xl font-bold">{stats.thisMonth}</div>
             </CardContent>
           </Card>
         </div>
@@ -149,46 +151,41 @@ export default function PatientDashboard() {
           
           {prescriptions.length === 0 ? (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No prescriptions yet</h3>
-                <p className="text-gray-600 text-center">
-                  Your prescriptions from doctors will appear here
-                </p>
+              <CardContent className="py-8">
+                <div className="text-center text-gray-500">
+                  <FileText className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p>No prescriptions found</p>
+                </div>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-6">
               {prescriptions.map((prescription) => (
                 <Card key={prescription.id}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg">
-                          {prescription.diagnosis}
+                          Dr. {prescription.doctor?.profiles?.full_name || 'Unknown Doctor'}
                         </CardTitle>
                         <CardDescription>
-                          Dr. {prescription.doctor?.profiles?.full_name} • {prescription.doctor?.specialization}
-                        </CardDescription>
-                        <CardDescription>
-                          Issued: {new Date(prescription.date_issued).toLocaleDateString()}
+                          {prescription.doctor?.specialization} • {new Date(prescription.created_at).toLocaleDateString()}
                         </CardDescription>
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex gap-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          prescription.status === 'active' 
-                            ? 'bg-green-100 text-green-800'
-                            : prescription.status === 'completed'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
+                          prescription.status === 'active' ? 'bg-green-100 text-green-800' :
+                          prescription.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
                         }`}>
                           {prescription.status}
                         </span>
                         <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleDownloadPDF(prescription)}
                         >
-                          <Download className="w-4 h-4 mr-1" />
+                          <Download className="w-4 h-4 mr-2" />
                           PDF
                         </Button>
                       </div>
@@ -196,20 +193,29 @@ export default function PatientDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
+                      {prescription.diagnosis && (
+                        <div>
+                          <h4 className="font-medium text-gray-900 mb-2">Diagnosis</h4>
+                          <p className="text-gray-600">{prescription.diagnosis}</p>
+                        </div>
+                      )}
+                      
                       <div>
-                        <h4 className="font-medium text-gray-900 mb-2">Medications:</h4>
+                        <h4 className="font-medium text-gray-900 mb-2">Medications</h4>
                         <div className="space-y-2">
-                          {prescription.medications.map((med, index) => (
-                            <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                              <div className="font-medium">{med.name}</div>
-                              <div className="text-sm text-gray-600">
-                                {med.dosage} • {med.frequency} • {med.duration}
+                          {prescription.medications.map((medication, index) => (
+                            <div key={index} className="bg-gray-50 p-3 rounded-md">
+                              <div className="flex justify-between items-start mb-2">
+                                <h5 className="font-medium text-gray-900">{medication.name}</h5>
+                                <span className="text-sm text-gray-600">{medication.dosage}</span>
                               </div>
-                              {med.instructions && (
-                                <div className="text-sm text-gray-600 mt-1">
-                                  Instructions: {med.instructions}
-                                </div>
-                              )}
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <p><strong>Frequency:</strong> {medication.frequency}</p>
+                                <p><strong>Duration:</strong> {medication.duration}</p>
+                                {medication.instructions && (
+                                  <p><strong>Instructions:</strong> {medication.instructions}</p>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -217,7 +223,7 @@ export default function PatientDashboard() {
                       
                       {prescription.notes && (
                         <div>
-                          <h4 className="font-medium text-gray-900 mb-2">Additional Notes:</h4>
+                          <h4 className="font-medium text-gray-900 mb-2">Notes</h4>
                           <p className="text-gray-600">{prescription.notes}</p>
                         </div>
                       )}

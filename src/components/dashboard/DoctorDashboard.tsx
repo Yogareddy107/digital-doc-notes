@@ -1,17 +1,16 @@
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Prescription, Medication } from '@/types/database';
-import { Plus, FileText, Users, Calendar, LogOut } from 'lucide-react';
+import { Plus, FileText, Users, Calendar, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PrescriptionForm from '@/components/prescriptions/PrescriptionForm';
 import PrescriptionList from '@/components/prescriptions/PrescriptionList';
 import { toast } from '@/hooks/use-toast';
 
 export default function DoctorDashboard() {
-  const { profile, signOut } = useAuth();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -97,12 +96,14 @@ export default function DoctorDashboard() {
           <div className="flex justify-between items-center py-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Doctor Dashboard</h1>
-              <p className="text-gray-600">Welcome back, Dr. {profile?.full_name}</p>
+              <p className="text-gray-600">Welcome to the Doctor Portal</p>
             </div>
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <Link to="/">
+              <Button variant="outline">
+                <Home className="w-4 h-4 mr-2" />
+                Home
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
