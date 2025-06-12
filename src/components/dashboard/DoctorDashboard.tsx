@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -24,33 +25,10 @@ export default function DoctorDashboard() {
       const { data, error } = await supabase
         .from('prescriptions')
         .select(`
-          id,
-          doctor_id,
-          patient_id,
-          date_issued,
-          diagnosis,
-          medications,
-          notes,
-          pdf_url,
-          status,
-          created_at,
-          updated_at,
+          *,
           patients (
-            id,
-            date_of_birth,
-            medical_record_number,
-            emergency_contact,
-            created_at,
-            updated_at,
-            profiles (
-              id,
-              email,
-              full_name,
-              phone,
-              role,
-              created_at,
-              updated_at
-            )
+            *,
+            profiles (*)
           )
         `)
         .order('created_at', { ascending: false });
@@ -70,14 +48,14 @@ export default function DoctorDashboard() {
         status: prescription.status as 'active' | 'cancelled' | 'completed',
         created_at: prescription.created_at || new Date().toISOString(),
         updated_at: prescription.updated_at || new Date().toISOString(),
-        patient: prescription.patients ? {
+        patient: prescription.patients && prescription.patients.profiles ? {
           id: prescription.patients.id,
           date_of_birth: prescription.patients.date_of_birth,
           medical_record_number: prescription.patients.medical_record_number,
           emergency_contact: prescription.patients.emergency_contact,
           created_at: prescription.patients.created_at || new Date().toISOString(),
           updated_at: prescription.patients.updated_at || new Date().toISOString(),
-          profiles: prescription.patients.profiles ? {
+          profiles: {
             id: prescription.patients.profiles.id,
             email: prescription.patients.profiles.email,
             full_name: prescription.patients.profiles.full_name,
@@ -85,14 +63,6 @@ export default function DoctorDashboard() {
             role: prescription.patients.profiles.role,
             created_at: prescription.patients.profiles.created_at || new Date().toISOString(),
             updated_at: prescription.patients.profiles.updated_at || new Date().toISOString()
-          } : {
-            id: '',
-            email: '',
-            full_name: 'Unknown Patient',
-            phone: null,
-            role: 'patient' as const,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
           }
         } : undefined
       })) || [];

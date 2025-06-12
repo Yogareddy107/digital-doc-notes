@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +22,6 @@ interface PatientWithProfile extends Patient {
 }
 
 export default function PrescriptionForm({ prescription, onSave, onCancel }: PrescriptionFormProps) {
-  const { user } = useAuth();
   const [patients, setPatients] = useState<PatientWithProfile[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,14 +52,14 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         .from('patients')
         .select(`
           *,
-          profiles!inner (*)
+          profiles (*)
         `);
 
       if (error) throw error;
       
       // Transform the data to match our interface, filtering out any with missing profiles
       const transformedData: PatientWithProfile[] = data?.filter(patient => 
-        patient.profiles && typeof patient.profiles === 'object' && !('error' in patient.profiles) && patient.profiles !== null
+        patient.profiles && typeof patient.profiles === 'object' && !Array.isArray(patient.profiles)
       ).map(patient => ({
         ...patient,
         profiles: patient.profiles as Profile
@@ -104,15 +102,6 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to create prescriptions",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     setLoading(true);
 
     try {
@@ -120,8 +109,9 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         throw new Error('At least one medication is required');
       }
 
+      // For demo purposes, we'll use a mock doctor ID
       const prescriptionData = {
-        doctor_id: user.id,
+        doctor_id: 'demo-doctor-id',
         patient_id: formData.patient_id,
         diagnosis: formData.diagnosis,
         medications: formData.medications as any, // Cast to Json type for Supabase
