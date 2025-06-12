@@ -48,22 +48,31 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
 
   const fetchPatients = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch patients and profiles separately
+      const { data: patientsData, error: patientsError } = await supabase
         .from('patients')
-        .select(`
-          *,
-          profiles (*)
-        `);
+        .select('*');
 
-      if (error) throw error;
-      
-      // Transform the data to match our interface, filtering out any with missing profiles
-      const transformedData: PatientWithProfile[] = data?.filter(patient => 
-        patient.profiles && typeof patient.profiles === 'object' && !Array.isArray(patient.profiles)
-      ).map(patient => ({
-        ...patient,
-        profiles: patient.profiles as Profile
-      })) || [];
+      if (patientsError) throw patientsError;
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'patient');
+
+      if (profilesError) throw profilesError;
+
+      // Transform the data to match our interface
+      const transformedData: PatientWithProfile[] = patientsData?.map(patient => {
+        const profile = profilesData?.find(p => p.id === patient.id);
+        if (profile) {
+          return {
+            ...patient,
+            profiles: profile
+          };
+        }
+        return null;
+      }).filter(Boolean) as PatientWithProfile[] || [];
       
       setPatients(transformedData);
     } catch (error: any) {
@@ -109,12 +118,14 @@ export default function PrescriptionForm({ prescription, onSave, onCancel }: Pre
         throw new Error('At least one medication is required');
       }
 
-      // For demo purposes, we'll use a mock doctor ID
+      // Generate a valid UUID for demo doctor ID
+      const demoUuid = crypto.randomUUID();
+      
       const prescriptionData = {
-        doctor_id: 'demo-doctor-id',
+        doctor_id: demoUuid,
         patient_id: formData.patient_id,
         diagnosis: formData.diagnosis,
-        medications: formData.medications as any, // Cast to Json type for Supabase
+        medications: formData.medications as any,
         notes: formData.notes || null
       };
 

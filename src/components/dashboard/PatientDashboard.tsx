@@ -19,49 +19,62 @@ export default function PatientDashboard() {
 
   const fetchPrescriptions = async () => {
     try {
-      const { data, error } = await supabase
+      // First fetch prescriptions
+      const { data: prescriptionsData, error: prescriptionsError } = await supabase
         .from('prescriptions')
-        .select(`
-          *,
-          doctors (
-            *,
-            profiles (*)
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      
-      // Transform the data to match our interface
-      const transformedData: Prescription[] = data?.map(prescription => ({
-        id: prescription.id,
-        doctor_id: prescription.doctor_id,
-        patient_id: prescription.patient_id,
-        date_issued: prescription.date_issued || new Date().toISOString(),
-        diagnosis: prescription.diagnosis,
-        medications: prescription.medications as unknown as Medication[],
-        notes: prescription.notes,
-        pdf_url: prescription.pdf_url,
-        status: prescription.status as 'active' | 'cancelled' | 'completed',
-        created_at: prescription.created_at || new Date().toISOString(),
-        updated_at: prescription.updated_at || new Date().toISOString(),
-        doctor: prescription.doctors && prescription.doctors.profiles ? {
-          id: prescription.doctors.id,
-          specialization: prescription.doctors.specialization,
-          license_number: prescription.doctors.license_number,
-          created_at: prescription.doctors.created_at || new Date().toISOString(),
-          updated_at: prescription.doctors.updated_at || new Date().toISOString(),
-          profiles: {
-            id: prescription.doctors.profiles.id,
-            email: prescription.doctors.profiles.email,
-            full_name: prescription.doctors.profiles.full_name,
-            phone: prescription.doctors.profiles.phone,
-            role: prescription.doctors.profiles.role,
-            created_at: prescription.doctors.profiles.created_at || new Date().toISOString(),
-            updated_at: prescription.doctors.profiles.updated_at || new Date().toISOString()
-          }
-        } : undefined
-      })) || [];
+      if (prescriptionsError) throw prescriptionsError;
+
+      // Then fetch doctors and profiles separately
+      const { data: doctorsData, error: doctorsError } = await supabase
+        .from('doctors')
+        .select('*');
+
+      if (doctorsError) throw doctorsError;
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (profilesError) throw profilesError;
+
+      // Transform and combine the data
+      const transformedData: Prescription[] = prescriptionsData?.map(prescription => {
+        const doctor = doctorsData?.find(d => d.id === prescription.doctor_id);
+        const profile = profilesData?.find(p => p.id === prescription.doctor_id);
+
+        return {
+          id: prescription.id,
+          doctor_id: prescription.doctor_id,
+          patient_id: prescription.patient_id,
+          date_issued: prescription.date_issued || new Date().toISOString(),
+          diagnosis: prescription.diagnosis,
+          medications: prescription.medications as unknown as Medication[],
+          notes: prescription.notes,
+          pdf_url: prescription.pdf_url,
+          status: prescription.status as 'active' | 'cancelled' | 'completed',
+          created_at: prescription.created_at || new Date().toISOString(),
+          updated_at: prescription.updated_at || new Date().toISOString(),
+          doctor: doctor && profile ? {
+            id: doctor.id,
+            specialization: doctor.specialization,
+            license_number: doctor.license_number,
+            created_at: doctor.created_at || new Date().toISOString(),
+            updated_at: doctor.updated_at || new Date().toISOString(),
+            profiles: {
+              id: profile.id,
+              email: profile.email,
+              full_name: profile.full_name,
+              phone: profile.phone,
+              role: profile.role,
+              created_at: profile.created_at || new Date().toISOString(),
+              updated_at: profile.updated_at || new Date().toISOString()
+            }
+          } : undefined
+        };
+      }) || [];
       
       setPrescriptions(transformedData);
     } catch (error: any) {
